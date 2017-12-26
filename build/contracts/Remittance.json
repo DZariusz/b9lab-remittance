@@ -1,0 +1,308 @@
+{
+  "contract_name": "Remittance",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "pass",
+          "type": "bytes32"
+        },
+        {
+          "name": "recipient",
+          "type": "address"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [
+        {
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "transfers",
+      "outputs": [
+        {
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "name": "recipientSha",
+          "type": "bytes32"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "name": "deadlineDate",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "gasUsedForDeploy",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "turnOff",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "pass",
+          "type": "bytes32"
+        },
+        {
+          "name": "recipientSha",
+          "type": "bytes32"
+        }
+      ],
+      "name": "createTransfer",
+      "outputs": [
+        {
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "payable": true,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "pass",
+          "type": "bytes32"
+        },
+        {
+          "name": "recipient",
+          "type": "address"
+        }
+      ],
+      "name": "exchangeWithdraw",
+      "outputs": [
+        {
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "payable": false,
+      "type": "constructor"
+    },
+    {
+      "payable": false,
+      "type": "fallback"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "_deadline",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogCreatedTransfer",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_recipient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogTransfer",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_exchangeAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "_commission",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogExchangeWithdraw",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "_outOfOrder",
+          "type": "bool"
+        }
+      ],
+      "name": "LogTurnOff",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x6060604052620151806002556003805460ff19169055341561002057600080fd5b5b60018054600160a060020a03191633600160a060020a03161790555a45036000555b5b6106b5806100536000396000f3006060604052361561005c5763ffffffff60e060020a6000350416631b258d5081146100705780633c64f04b146100a6578063987c752f146100f2578063af10c81014610117578063b6bd6a5d1461013e578063c35debdc14610160575b341561006757600080fd5b61006e5b5b565b005b341561007b57600080fd5b610092600435600160a060020a0360243516610196565b604051901515815260200160405180910390f35b34156100b157600080fd5b6100bc60043561024d565b604051600160a060020a039094168452602084019290925260408084019190915260608301919091526080909101905180910390f35b34156100fd57600080fd5b61010561027e565b60405190815260200160405180910390f35b341561012257600080fd5b610092610284565b604051901515815260200160405180910390f35b6100926004356024356102fe565b604051901515815260200160405180910390f35b341561016b57600080fd5b610092600435600160a060020a03602435166103e9565b604051901515815260200160405180910390f35b600354600090819060ff16156101ab57600080fd5b8383604051918252600160a060020a0316606060020a02602082015260340160405190819003902060008181526004602052604090206002015490915015156101f357600080fd5b60008181526004602052604090205433600160a060020a0390811691161461021a57600080fd5b60008181526004602052604090206003015442901161023857600080fd5b61024281336105be565b91505b5b5092915050565b6004602052600090815260409020805460018201546002830154600390930154600160a060020a0390921692909184565b60005481565b60035460009060ff161561029757600080fd5b60015433600160a060020a039081169116146102af57fe5b6003805460ff1916600117908190557f6544661908bc156d7ef67031808089e666a03db2a5771082f5ebf17679062f759060ff16604051901515815260200160405180910390a15060015b5b90565b600354600090819060ff161561031357600080fd5b83836040519182526020820152604090810190519081900390206000818152600460205260409020600201549091501561034c57600080fd5b610354610659565b6000828152600460205260409081902060028082018490558154600160a060020a03191633600160a060020a03161782556001820187905554420160039091018190557feaf7ca27b7e7ffce2692c6e3b9bb45b7cb513dd9ee5d1edee3fdcfbb5ea346289284925192835260208301919091526040808301919091526060909101905180910390a1600191505b5b5092915050565b600354600090819081908190819060ff161561040457600080fd5b85604051600160a060020a0391909116606060020a028152601401604051809103902093508684604051918252602082015260409081019051908190039020600081815260046020526040902060020154909350151561046357600080fd5b60008381526004602052604090205433600160a060020a039081169116148015906104c2575033604051600160a060020a0391909116606060020a02815260140160405190819003902060008481526004602052604090206001015414155b15156104cd57600080fd5b6000838152600460205260408082206002015473__ExchangeLib___________________________9263c4a20e6b92600391600191516040015260405160e060020a63ffffffff8616028152600481019390935260248301919091526044820152606401604080518083038186803b151561054757600080fd5b6102c65a03f4151561055857600080fd5b50505060405180519060200180519050915091507f7bbd2329da6ed6f967ddfdeeb5803a5ead9226b84d9e678e0000f2ffcef345e4828260405191825260208201526040908101905180910390a16105b083336105be565b94505b5b5050505092915050565b60008281526004602052604080822060020180549083905590600160a060020a0384169082156108fc0290839051600060405180830381858888f19350505050151561060957600080fd5b7f2ba5dd9653174138784e5d96e6414a4792d581bf8b5622f9a78f2e76d7ee5d1a8382604051600160a060020a03909216825260208201526040908101905180910390a1600191505b5092915050565b600080600a3a6000540260050281151561066f57fe5b0490503481901161067f57600080fd5b80340391505b50905600a165627a7a7230582011ed5df1bab70786192c65e568c4f9525be9d4bd54ba4304af7fa3e39e90b3410029",
+  "networks": {
+    "1513947890013": {
+      "events": {
+        "0x014e8b7707a8176e08c936d47b3845102a40e08cd2c296146324685cd753a465": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "_recipient",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_amount",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogCreatedTransfer",
+          "type": "event"
+        },
+        "0x2ba5dd9653174138784e5d96e6414a4792d581bf8b5622f9a78f2e76d7ee5d1a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_recipient",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "_amount",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogTransfer",
+          "type": "event"
+        },
+        "0x7bbd2329da6ed6f967ddfdeeb5803a5ead9226b84d9e678e0000f2ffcef345e4": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_exchangeAmount",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_commission",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogExchangeWithdraw",
+          "type": "event"
+        },
+        "0x6544661908bc156d7ef67031808089e666a03db2a5771082f5ebf17679062f75": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_outOfOrder",
+              "type": "bool"
+            }
+          ],
+          "name": "LogTurnOff",
+          "type": "event"
+        },
+        "0xeaf7ca27b7e7ffce2692c6e3b9bb45b7cb513dd9ee5d1edee3fdcfbb5ea34628": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "_id",
+              "type": "bytes32"
+            },
+            {
+              "indexed": false,
+              "name": "_deadline",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "name": "_amount",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogCreatedTransfer",
+          "type": "event"
+        }
+      },
+      "links": {
+        "ExchangeLib": "0xaa8d4c9cb078c59899555952543d3097e0b07c82"
+      },
+      "address": "0xf75d188bb049a2aa9993f7c71f42fb3e97c3de80",
+      "updated_at": 1514315528951
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1514315528951
+}

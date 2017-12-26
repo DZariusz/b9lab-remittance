@@ -1,0 +1,46 @@
+{
+  "contract_name": "ExchangeLib",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "name": "conversionRate",
+          "type": "uint256"
+        },
+        {
+          "name": "commissionPercent",
+          "type": "uint256"
+        }
+      ],
+      "name": "convert",
+      "outputs": [
+        {
+          "name": "convertedAmount",
+          "type": "uint256"
+        },
+        {
+          "name": "commission",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    }
+  ],
+  "unlinked_binary": "0x60606040523415600e57600080fd5b5b60a58061001d6000396000f300606060405263ffffffff60e060020a600035041663c4a20e6b81146023575b600080fd5b6032600435602435604435604a565b60405191825260208201526040908101905180910390f35b6000808484028160648583025b049050808203811560675781606a565b60015b935093505b50509350939150505600a165627a7a72305820647c42e6bdee2097320840cb88d21ffd1bf7fd0315811d3aa393babcd990f6e50029",
+  "networks": {
+    "1513947890013": {
+      "events": {},
+      "links": {},
+      "address": "0xaa8d4c9cb078c59899555952543d3097e0b07c82",
+      "updated_at": 1514315528974
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1514315528974
+}
