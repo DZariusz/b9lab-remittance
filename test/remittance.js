@@ -22,24 +22,12 @@ contract('Remittance', function(accounts) {
     //console.log('pass: ', pass);
     //console.log('ID: ', id);
 
-  it("should NOT be able to get ether, when no transaction present", function() {
-    return Remittance.deployed().then(function (instance) {
-
-
-        instance.exchangeWithdraw.sendTransaction(pass, Bob, {from: Carol}).then(_success => {
-            assert.isNotOk(false, 'not cool');
-        }).catch (e => {
-            //PASS
-            //console.log('catch for no transfer - PASS');
-        });
-
-    });
-  });
 
   it("should throw, when not enough founds for commission fee", function() {
-    return Remittance.deployed().then(function (instance) {
+    return Remittance.deployed().then(function (_instance) {
 
-        instance.createTransfer.sendTransaction(id, {value: 1}).then(_success => {
+        instance = _instance;
+        instance.createTransfer.sendTransaction(id, Carol, {value: 1}).then(_success => {
             assert.isOk(false, 'did not throw');
         }).catch (e => {
             //PASS
@@ -51,24 +39,17 @@ contract('Remittance', function(accounts) {
 
 
 
-
   it("should be able to create transfer", function() {
-
-
 
         return Remittance.deployed().then(_instance => {
 
-            instance = _instance;
-            return instance.createTransfer.sendTransaction(id, {from: Alice, value: val});
+            return instance.createTransfer.sendTransaction(id, Carol, {from: Alice, value: val});
 
         }).then(_success => {
 
+            assert.isOk(_success, "Something wrong with `createTransfer()`");
             assert.isOk(web3.eth.getTransactionReceipt( _success ), "Something wrong with `createTransfer()`");
-            return instance.gasUsedForDeploy.call();
 
-        }).then(_gasUsedForDeploy => {
-
-          gasUsedForDeploy = _gasUsedForDeploy;
 
         });
 
@@ -94,24 +75,21 @@ contract('Remittance', function(accounts) {
   it("should have transfer with id="+id+" with some founds on it ", function() {
 
 
-
         return Remittance.deployed().then(_instance => {
 
-            return instance.transfers.call(id);
+            gasUsedForDeploy = instance.contract.gasUsedForDeploy();
+            transfer = instance.contract.transfers(id);
 
-        }).then(_transfer => {
+            //console.log( transfer );
+            assert.isBelow(transfer[2].toNumber(), val, 'after apply commission, transfer amount should be less than send value');
+            assert.isAbove(transfer[2].toNumber(), 0, 'amount should be above 0');
 
-            assert.isBelow(_transfer[1].toNumber(), val, 'after apply commission, transfer amount should be less than send value');
-            assert.isAbove(_transfer[1].toNumber(), 0, 'amount should be above 0');
-
-        /*}).catch(e => {
-            console.log(e); // */
         });
 
   });
 
-  it("should give back ether for exchange when valid pass provided", function() {
 
+  it("should give back ether for exchange when valid pass provided", function() {
 
 
         return Remittance.deployed().then(_instance => {
@@ -123,15 +101,31 @@ contract('Remittance', function(accounts) {
         }).then(_success => {
 
             assert.isAbove(web3.eth.getBalance(Carol).toNumber(), carolStartBalance.toNumber(), 'Carol should be able to withdraw founds for exchange');
-            assert.isAbove(web3.eth.getBalance(instance.contract.address).toNumber(), 0, 'ME (contract) should get commission');
+            assert.isAbove(web3.eth.getBalance(instance.contract.address).toNumber(), 0, 'ME (contract) should have commission');
 
-
-
-        /*}).catch(e => {
-            console.log(e); // */
         });
 
   });
+
+
+
+
+    it("should NOT able to create another transfer with the same PASS", function() {
+
+        return Remittance.deployed().then(_instance => {
+
+            return instance.createTransfer.sendTransaction(id, Carol, {from: Alice, value: val});
+
+        }).then(_success => {
+
+            assert.isTrue(false, "should throw because we used the same pass`");
+
+
+        }).catch(_e => {
+            //PASS
+        });
+
+    });
 
 
 });

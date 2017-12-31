@@ -1,0 +1,43 @@
+{
+  "contract_name": "Killable",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "Killer",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "turnOff",
+      "outputs": [
+        {
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "turnOn",
+      "outputs": [
+        {
+          "name": "success",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    }
+  ],
+  "unlinked_binary": "0x6060604052341561000f57600080fd5b5b6101538061001f6000396000f300606060405263ffffffff60e060020a60003504166315e5ae1e811461003a578063af10c8101461004f578063ba33ed7d14610076575b600080fd5b341561004557600080fd5b61004d61009d565b005b341561005a57600080fd5b6100626100bb565b604051901515815260200160405180910390f35b341561008157600080fd5b6100626100f4565b604051901515815260200160405180910390f35b60008054600160a060020a03191633600160a060020a03161790555b565b6000805433600160a060020a039081169116146100d757600080fd5b506000805460a060020a60ff02191660a060020a17905560015b90565b6000805433600160a060020a0390811691161461011057600080fd5b506000805460a060020a60ff021916905560015b905600a165627a7a723058203579c64565ed7edc88184dcf883ad593472b7b634390b98bf39c728ad292f5120029",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1514729273865
+}
