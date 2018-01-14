@@ -1,9 +1,9 @@
-pragma solidity ^0.4.4;
+pragma solidity ^0.4.11;
 
 contract Killable {
 
 	address owner;
-	bool outOfOrder;
+	bool public outOfOrder;
 
 	function Killer()
 	public
@@ -16,11 +16,15 @@ contract Killable {
 		_;
 	}
 
+
+	event LogTurnOff(bool _outOfOrder);
+
 	function turnOff()
 		returns (bool success)
 	{
 		require( msg.sender == owner );
 		outOfOrder = true;
+		LogTurnOff(true);
 		return true;
 	}
 
