@@ -1,62 +1,48 @@
 pragma solidity ^0.4.11;
 
 import "./ExchangeLib.sol";
-import "./Killable.sol";
+import "./SafeMath.sol";
+
+import "./Withdrawable.sol";
 
 
-contract Remittance is Killable {
 
-    uint public gasUsedForDeploy; //this is how much was used for deploy
-
-    uint deadline = 1 days;
-
-    uint256 public commissionFee = 20000;
-    uint256 public commissions;
+contract Remittance is Withdrawable {
 
 
     struct TransferData {
+        uint256 amount;
+        uint256 deadlineBlock;  //after this block number, Alice can withdraw
         address sender;       //creator of the transfer eg. Alice
-        address exchanger;    //eg. Carol
-        uint amount;
-        uint deadlineDate;  //after this date Alice can withdraw
         bool usedPass;
+        bool done;
     }
 
-    //the KEY of the structure will be hash: keccak256(pass + Bob_address)
+
+    uint256 public commissionFee;
+
+
+    //the KEY of the structure will be hash: keccak256(email pass + sms pass + Bob_address)
     mapping(bytes32 => TransferData) public transfers;
 
+    event LogCommissionFee(uint256 fee);
+    event LogCreatedTransfer(address sender, bytes32 id, uint256 amount);
+    event LogDoExchange(bytes32 id, uint256 amount, uint256 fee, uint256 convertedAmount);
+    event LogCancelTransfer(bytes32 id, uint256 amount);
+    event LogTransfer(address recipient, uint256 amount);
 
     function() public {}
 
-    function Remittance()
-    public
-    {
-        owner = msg.sender;
-        //this is gas used for deploy + constructor
-        gasUsedForDeploy = block.gaslimit - msg.gas;
+    function Remittance() public {
+
+        //fee will be 1/100 of what deploy costs
+        commissionFee = SafeMath.div(SafeMath.mul(block.gaslimit - msg.gas, tx.gasprice), 100);
+        LogCommissionFee(commissionFee);
     }
 
 
 
-
-    /// @return uint commision fee for make transfer
-    function calculateFee()
-        public
-        constant
-        returns (uint256 fee)
-    {
-        // I want fee that is half of deploing cost
-        return gasUsedForDeploy / 2 * tx.gasprice;
-
-    }
-
-
-    event LogCreatedTransfer(address _sender, bytes32 _id, int _amount);
-
-    // @param id bytes32 should be keccak256(pass + Bob address + exchanger address)
-    // @param startTime uint timestamp when transfer is created
-    // @param exchanger address who can exchange the founds
-    function createTransfer(bytes32 id, uint256 startTime, address exchanger)
+    function createTransfer(bytes32 id, uint256 deadline)
         public
         payable
         onlyIfRunning
@@ -64,23 +50,20 @@ contract Remittance is Killable {
     {
 
         require( !transfers[ id ].usedPass );
-        require( startTime > 0);
-        require( exchanger != 0);
 
-        //do you have enough for both fees?
-        uint256 fee = calculateFee();
-        require(msg.value > fee + commissionFee);
+        uint256 cf = commissionFee;
+        //do you have enough for both fees (transfer and exchange)?
+        require(msg.value > 2 * cf);
 
-        commissions += fee;
+        addBalance(owner, cf);
 
         transfers[ id ].usedPass = true;
-        transfers[ id ].amount = msg.value - fee;
+        transfers[ id ].amount = msg.value - cf;
         transfers[ id ].sender = msg.sender;
-        transfers[ id ].exchanger = exchanger;
-        transfers[ id ].deadlineDate = startTime + deadline;
+        transfers[ id ].deadlineBlock = block.number + deadline;
 
-        //LogCreatedTransfer(msg.sender, id, transfers[ id ].amount);
-        LogCreatedTransfer(msg.sender, id, int(msg.value - fee));
+
+        LogCreatedTransfer(msg.sender, id, msg.value - cf);
 
 
         return true;
@@ -88,116 +71,72 @@ contract Remittance is Killable {
     }
 
 
-    event LogExchangeWithdraw(address _exchanger, uint _exchangeAmount, uint _commission);
 
-    // this function is for Carol/exchanger only
+
+    // this function is for Carol/exchanger
     //
-    // @param pass that was send by email
-    // @param bob address works like second pass, but here its to confirm, which payment to withdraw
-    function exchangeWithdraw (string pass, address bob, uint8 conversionRate)
+    function doExchange(string emailPass, string smsPass, address bob, uint8 conversionRate)
         public
         onlyIfRunning
         returns (bool success)
     {
 
-        bytes32 id = keccak256( pass, bob, msg.sender );
-        
-        //throw if no data
-        //require( transfers[ id ].amount != 0 );
-        require( msg.sender == transfers[ id ].exchanger );
+        bytes32 id = keccak256(emailPass, smsPass, bob);
+        require( !transfers[ id ].done );
 
+        uint256 amount = transfers[ id ].amount;
+        require( amount > 0 );
 
+        addBalance(owner, commissionFee);
+        addBalance(msg.sender, amount - commissionFee);
+        transfers[ id ].done = true;
 
-        // I assume, that we should send Carol all the amount,
-        // but she needs to know how much give to Bob eg. base on event
+        //I assume, that we should send Carol the: amount - fee,
+        //but she needs to know how much give to Bob eg. base on event
+        //I know this might be a regular function, but I have a feeleing, this exercise was about to use externa llibrary? if not, I can change.
+        uint256 convertedAmount = ExchangeLib.convert(amount - commissionFee, conversionRate);
 
-        commissions += commissionFee;
-        uint256 exchange = ExchangeLib.convert(transfers[ id ].amount - commissionFee, conversionRate);
+        LogDoExchange(id, amount, commissionFee, convertedAmount);
 
-        transfers[ id ].amount -= commissionFee;
-
-        LogExchangeWithdraw(msg.sender, exchange, commissionFee);
-
-        return doTransfer(id);
+        return true;
     }
 
     // this is only for creator of the transfer, so he can get money after deadline
     //
-    /// @param id bytes32 should be keccak(pass + recipient + exchanger)
-    function withdraw(bytes32 id)
+    function cancelTransfer(bytes32 id)
         public
         onlyIfRunning
         returns (bool success)
     {
 
         //throw if no data
-        require( transfers[ id ].amount != 0 );
+        require( transfers[ id ].sender == msg.sender );
+        require( transfers[ id ].deadlineBlock < block.number );
+        require( !transfers[ id ].done );
 
         //only creator of transfer can withdraw its funds
-        require( transfers[ id ].sender == msg.sender );
-        //and only after deadline
-        require( transfers[ id ].deadlineDate <= now );
-
-        return doTransfer(id);
-
-    }
-
-
-    event LogTransfer(address _recipient, uint256 _amount);
-
-    // this is final step for both public withdraw functions
-    function doTransfer (bytes32 id)
-    private
-    returns (bool success)
-    {
-        //this should be checked already before call this function
-        //require( transfers[ id ].amount != 0 );
-
+        transfers[ id ].done = true;
         uint256 a = transfers[ id ].amount;
         transfers[ id ].amount = 0;
 
-        //send ether to user who will exchange
-        msg.sender.transfer( a );
+        addBalance(msg.sender, a);
 
-        //in order to safe gass, I can remove `delete`, since I will be checking only `.amount` anyway
-        //delete transfers[ id ];
-
-        LogTransfer(msg.sender, a);
+        LogCancelTransfer(id, a);
 
         return true;
+
     }
 
 
 
 
-    event LogTurnOff(bool _outOfOrder);
-
-
-    function hash(string pass, address Bob, address exchanger)
+    function hash(string p1, string p2, address b)
     public constant returns (bytes32)
     {
-        return keccak256(pass, Bob, exchanger);
+        return keccak256(p1, p2, b);
     }
 
 
-    event LogGetCommissions(address _receiver, uint _amount);
 
-    function getCommissions()
-        public
-        onlyIfRunning
-        returns (bool success)
-    {
-        require( msg.sender == owner );
-        require( commissions > 0 );
-
-        uint c = commissions;
-        commissions = 0;
-
-        msg.sender.transfer( c );
-
-        LogGetCommissions(msg.sender, c);
-
-        return true;
-    }
 
 }

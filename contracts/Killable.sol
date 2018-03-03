@@ -1,41 +1,65 @@
 pragma solidity ^0.4.11;
 
+
+// v 1.0
+// date 2018-03-03
 contract Killable {
 
-	address owner;
-	bool public outOfOrder;
-
-	function Killer()
-	public
-	{
-		owner = msg.sender;
-	}
-
-	modifier onlyIfRunning {
-		require( !outOfOrder );
-		_;
-	}
+    address owner;
+    bool public outOfOrder;
 
 
-	event LogTurnOff(bool _outOfOrder);
-
-	function turnOff()
-		returns (bool success)
-	{
-		require( msg.sender == owner );
-		outOfOrder = true;
-		LogTurnOff(true);
-		return true;
-	}
+    event LogStatus(bool outOfOrder);
+    event LogNewOwner(address owner);
 
 
-	function turnOn()
-		returns (bool success)
-	{
-		require( msg.sender == owner );
-		outOfOrder = false;
-		return true;
-	}
+    function Killable()
+    public
+    {
+        owner = msg.sender;
+    }
+
+    modifier onlyIfRunning {
+        require( !outOfOrder );
+        _;
+    }
+
+    modifier onlyForOwner {
+        require(msg.sender == owner);
+        _;
+    }
+
+
+
+    function turnOff()
+        onlyForOwner
+        returns (bool success)
+    {
+        outOfOrder = true;
+        LogStatus(true);
+        return true;
+    }
+
+
+    function turnOn()
+        onlyForOwner
+        returns (bool success)
+    {
+        outOfOrder = false;
+        LogStatus(false);
+        return true;
+    }
+
+
+    function newOwner(address _newOwner)
+        onlyForOwner
+        returns (bool success)
+    {
+        require( _newOwner != 0 );
+        owner = _newOwner;
+        LogNewOwner(_newOwner);
+        return true;
+    }
 
 
 }

@@ -22,3 +22,47 @@ Stretch goals:
 * plug a security hole (which one?) by changing one password to the recipient's address
 * make the contract a utility that can be used by David, Emma and anybody with an address
 * make you, the owner of the contract, take a cut of the Ethers smaller than what it would cost Alice to deploy the same contract herself
+
+
+
+## v5 changes
+
+* `uint256 public commissions;`
+
+_@xavierlepretre: Who owns the commission. I suppose the owner, but what if the owner changed?_
+
+I removed `commissions` variable, and I addedd **Withdrawable.sol**, and save commissions balance to the current owner address.
+Owner can be changes in any time, see **Killable.sol**
+
+
+* `address exchanger;    //eg. Carol`
+
+_@xavierlepretre: Could you find a way to not save exchanger and still have the same safety?_
+
+I removed `exchanger`, I made id to be **keccak(email pass, sms pass, Bob address)**
+
+
+* `bool usedPass;`
+  
+_@xavierlepretre: Can you find a cheap proxy for this bool?_
+
+Do you mean, that when bool is inside **map => structure** it it more expensive than eg. **map => bool** ?
+
+
+* `transfers[ id ].deadlineDate = startTime + deadline;`
+
+_@xavierlepretre: Too ugly a calculation. Can you find something more straightforward?
+  You are not even checking if it is in the past or not._
+
+
+I changed the calulation. now its base on block number.
+
+* addes `SafeMath` library
+
+ 
+
+## v4
+
+# instalation
+
+npm install bluebird --save-dev

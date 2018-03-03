@@ -1,115 +1,80 @@
-var Remittance = artifacts.require("./Remittance.sol");
+const Remittance = artifacts.require("./Remittance.sol");
 
-const txCheck = require("../util/txcheck.js");
-const txEvents = require("../util/txEvents.js");
+const txCheck = require("../util/txcheck_1.0.js");
+const txEvents = require("../util/txEvents_1.1.js");
+
+
+const helper = require("../util/callFunctions");
 
 
 contract('Remittance', function(accounts) {
 
-    var instance;
+    let instance;
 
-    var ME = accounts[0];
-    var Alice = accounts[4];
-    var Bob = accounts[5];
-    var Carol = accounts[6];
+    let  owner = accounts[0];
+    let  alice = accounts[4];
+    let  bob = accounts[5];
+    let  carol = accounts[6];
 
-    var pass = 'pass-send-via-email';
+    let  emailPass = 'pass-send-via-email' + Math.random();
+    let  smsPass = 'pass-send-via-sms' + Math.random();
 
-    var val, fee, commissionFee;
-    var id, _tx;
-
-    var startTime = Date.now();
-
+    let id, fee, amount, result;
 
     beforeEach("create new Remittance instance", async () => {
 
 
-        instance = await Remittance.new({from: ME});
-        id = await instance.hash.call(pass, startTime, Carol);
-        fee = await instance.calculateFee.call();
-        commissionFee = await instance.commissionFee.call();
+        instance = await Remittance.new({from: owner});
 
-        //console.log("FEE:",fee.toString());
-        fee = fee.plus(commissionFee).toNumber();
+        id = await instance.hash.call(emailPass, smsPass, bob);
+        fee = await instance.commissionFee.call();
+        assert.isAbove(fee.toString(10), 0, 'we need commissions fee');
 
 
-        val = parseInt(web3.toWei(10, 'kwei')) + fee;
+        amount = fee.add(fee).add(web3.toWei(10, 'kwei'));
+        assert.isAbove(amount.toString(10), fee.toString(10), 'amount should be enough for fees');
 
 
-        //console.log('Fee:', web3.fromWei(fee, 'ether'), 'ETH');
-        //console.log('Val to send:', web3.fromWei(val, 'ether'), 'ETH');
-        //var g =  await instance.gasUsedForDeploy.call();
-        //console.log('gasUsedForDeploy:', g.toNumber());
-        //console.log('gas price:', web3.eth.gasPrice.toNumber());
+        helper.setInstance(instance);
+        helper.setAmount(amount.toString(10));
+
 
     });
 
 
-    it("should throw, when not enough founds for commission fee", async () => {
+    it("should THROW, when not enough founds for commission fee", async () => {
+
+        await helper.createTransfer(alice, id, 1, 1, true);
+
+    });
 
 
-        //this should Pass, since we sent +1 more than a fee
-        _tx = await instance.createTransfer(id, startTime, Carol, {value: (fee + 10), from: Alice});
-        txCheck(_tx);
+    it("should THROW, when the same passwords used twice", async () => {
 
-        var ev = txEvents(_tx);
-        assert.isAbove(ev['LogCreatedTransfer']['_amount'].toNumber(), 0, 'transfer amount should be above 0');
-
-
-        //need new pass
-        id = await instance.hash.call(pass + '123', startTime, Carol);
-
-        try {
-            await instance.createTransfer(id, startTime, Carol, {value: fee, from: Alice});
-            assert.isTrue(false, 'should throw');
-
-        } catch (_e) {
-            //PASS
-            console.log('should throw, when not enough founds for commission fee - PASS');
-        } // */
+        await helper.createTransfer(alice, id, 1, amount);
+        await helper.createTransfer(alice, id, 1, amount, true);
 
     });
 
 
 
-    it("should NOT be able to withdraw before deadline", async () => {
+    it("should NOT be able to cancel transfer before deadline", async () => {
+
+        await helper.createTransfer(alice, id, 10, amount);
+        await helper.cancelTransfer(alice, id, true);
 
 
-        _tx = await instance.createTransfer(id, startTime, Carol, {value: val, from: Alice});
-        txCheck(_tx);
-
-        try {
-            _tx = await instance.withdraw(id, {from: Alice});
-            assert.isTrue(false, 'should throw');
-
-        } catch (_e) {
-            //PASS
-            console.log('should NOT be able to withdraw before deadline - PASS');
-        };
-
-    }); // */
+    });
 
 
 
-    it("should NOT be able to create another transfer with the same password", async () => {
+    it("should NOT be able to exchange without correct pass", async () => {
 
-        var b = await instance.transfers.call(id);
-        assert.isFalse(b[4], 'pass is already in use');
-
-        _tx = await instance.createTransfer(id, startTime, Carol, {value: val, from: Alice});
-        txCheck(_tx);
-
-        try {
-            _tx = await instance.createTransfer(id, startTime, Carol, {value: val, from: Alice});
-            assert.isTrue(false, 'did not throw');
-
-        } catch (_e) {
-            //PASS
-            console.log('should NOT able to create another transfer with the same - PASS');
-        };
+        await helper.createTransfer(alice, id, 10, amount);
+        await helper.doExchange(carol, emailPass, 'dont-have-bobs-pass', bob, 3, true);
 
 
-    }); // */
+    });
 
 
 });
