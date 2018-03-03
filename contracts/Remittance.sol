@@ -109,12 +109,12 @@ contract Remittance is Withdrawable {
         returns (bool success)
     {
 
-        //throw if no data
+
         require( transfers[ id ].sender == msg.sender );
         require( transfers[ id ].deadlineBlock < block.number );
         require( !transfers[ id ].done );
 
-        //only creator of transfer can withdraw its funds
+
         transfers[ id ].done = true;
         uint256 a = transfers[ id ].amount;
         transfers[ id ].amount = 0;
