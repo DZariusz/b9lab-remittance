@@ -3,20 +3,21 @@ pragma solidity ^0.4.11;
 import "./ExchangeLib.sol";
 import "./SafeMath.sol";
 
-import "./Withdrawable.sol";
+import "./Killable.sol";
 
 
 
-contract Remittance is Withdrawable {
+contract Remittance is Killable {
 
 
     struct TransferData {
         uint256 amount;
         uint256 deadlineBlock;  //after this block number, Alice can withdraw
         address sender;       //creator of the transfer eg. Alice
-        bool usedPass;
         bool done;
     }
+
+    mapping (address => uint256) public balances;
 
 
     uint256 public commissionFee;
@@ -25,9 +26,10 @@ contract Remittance is Withdrawable {
     //the KEY of the structure will be hash: keccak256(email pass + sms pass + Bob_address)
     mapping(bytes32 => TransferData) public transfers;
 
+    event LogAddBalance(address a, uint256 added);
     event LogCommissionFee(uint256 fee);
-    event LogCreatedTransfer(address sender, bytes32 id, uint256 amount);
-    event LogDoExchange(bytes32 id, uint256 amount, uint256 fee, uint256 convertedAmount);
+    event LogCreatedTransfer(bytes32 id, address sender, uint256 amount);
+    event LogDoExchange(bytes32 id, uint256 exchangedAmount);
     event LogCancelTransfer(bytes32 id, uint256 amount);
     event LogTransfer(address recipient, uint256 amount);
 
@@ -43,27 +45,27 @@ contract Remittance is Withdrawable {
 
 
     function createTransfer(bytes32 id, uint256 deadline)
-        public
-        payable
-        onlyIfRunning
-        returns (bool success)
+    public
+    payable
+    onlyIfRunning
+    returns (bool success)
     {
 
-        require( !transfers[ id ].usedPass );
+        require( transfers[ id ].sender == 0 );
 
         uint256 cf = commissionFee;
-        //do you have enough for both fees (transfer and exchange)?
-        require(msg.value > 2 * cf);
+        //do you have enough for fee?
+        require(msg.value > cf);
 
-        addBalance(owner, cf);
+        //fee for create transfer
+        balances[owner] += cf;
 
-        transfers[ id ].usedPass = true;
         transfers[ id ].amount = msg.value - cf;
         transfers[ id ].sender = msg.sender;
         transfers[ id ].deadlineBlock = block.number + deadline;
 
-
-        LogCreatedTransfer(msg.sender, id, msg.value - cf);
+        LogAddBalance(owner, cf);
+        LogCreatedTransfer(id, msg.sender, msg.value - cf);
 
 
         return true;
@@ -75,28 +77,24 @@ contract Remittance is Withdrawable {
 
     // this function is for Carol/exchanger
     //
-    function doExchange(string emailPass, string smsPass, address bob, uint8 conversionRate)
-        public
-        onlyIfRunning
-        returns (bool success)
+    function doExchange(string emailPass, string smsPass, address bob)
+    public
+    onlyIfRunning
+    returns (bool success)
     {
 
         bytes32 id = keccak256(emailPass, smsPass, bob);
         require( !transfers[ id ].done );
+        require( transfers[ id ].sender != 0 );
 
-        uint256 amount = transfers[ id ].amount;
-        require( amount > 0 );
-
-        addBalance(owner, commissionFee);
-        addBalance(msg.sender, amount - commissionFee);
         transfers[ id ].done = true;
 
-        //I assume, that we should send Carol the: amount - fee,
-        //but she needs to know how much give to Bob eg. base on event
-        //I know this might be a regular function, but I have a feeleing, this exercise was about to use externa llibrary? if not, I can change.
-        uint256 convertedAmount = ExchangeLib.convert(amount - commissionFee, conversionRate);
+        uint256 amount = transfers[ id ].amount;
 
-        LogDoExchange(id, amount, commissionFee, convertedAmount);
+        //send coins to carol
+        msg.sender.transfer(amount);
+
+        LogDoExchange(id, amount);
 
         return true;
     }
@@ -104,11 +102,10 @@ contract Remittance is Withdrawable {
     // this is only for creator of the transfer, so he can get money after deadline
     //
     function cancelTransfer(bytes32 id)
-        public
-        onlyIfRunning
-        returns (bool success)
+    public
+    onlyIfRunning
+    returns (bool success)
     {
-
 
         require( transfers[ id ].sender == msg.sender );
         require( transfers[ id ].deadlineBlock < block.number );
@@ -119,7 +116,7 @@ contract Remittance is Withdrawable {
         uint256 a = transfers[ id ].amount;
         transfers[ id ].amount = 0;
 
-        addBalance(msg.sender, a);
+        msg.sender.transfer(a);
 
         LogCancelTransfer(id, a);
 

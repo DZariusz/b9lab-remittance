@@ -5,13 +5,13 @@ const txEvents = require("../util/txEvents_1.1.js");
 
 
 const helper = require("../util/callFunctions");
-/*
+
 const Promise = require('bluebird');
 
 
 if (typeof web3.eth.getBlockPromise !== "function") {
     Promise.promisifyAll(web3.eth, { suffix: "Promise" });
-} // */
+}
 
 
 
@@ -39,9 +39,8 @@ contract('Remittance', function(accounts) {
         assert.isAbove(fee.toString(10), 0, 'we need commissions fee');
 
         //amount should be enough for fees
-        amount = fee.add(fee).add(web3.toWei(10, 'kwei'));
-        console.log(amount.toString(10));
-        assert.isAbove(amount.toString(10), fee.toString(10), 'amount should be enough for fees');
+        amount = fee.add(web3.toWei(0.1, 'ether'));
+        assert.isAbove(amount.minus(fee).toString(10), 0, 'amount should be enough for fees');
 
 
         helper.setInstance(instance);
@@ -53,11 +52,11 @@ contract('Remittance', function(accounts) {
 
     it("should give owner the fee", async () => {
 
-        let balance1 = await instance.getBalance.call(owner);
+        let balance1 = await instance.balances.call(owner);
         await helper.createTransfer(alice, id, 1, amount);
-        let balance2 = await instance.getBalance.call(owner);
+        let balance2 = await instance.balances.call(owner);
 
-        assert.equal(balance2.minus(balance1).toString(10), fee.toString(10), 'invalid fee');
+        assert.equal(balance2.minus(balance1).toString(10), fee.toString(10), 'invalid owner balance');
 
 
     });
@@ -66,17 +65,18 @@ contract('Remittance', function(accounts) {
 
         await helper.createTransfer(alice, id, 1, amount);
 
-        let balance1 = await instance.getBalance.call(carol);
-        let ownerBalance1 = await instance.getBalance.call(owner);
+        let balance1 = await web3.eth.getBalancePromise(carol);
 
-        result = await helper.doExchange(carol, emailPass, smsPass, bob, 3);
+        result = await helper.doExchange(carol, emailPass, smsPass, bob);
 
-        let balance2 = await instance.getBalance.call(carol);
-        let ownerBalance2 = await instance.getBalance.call(owner);
+        let balance2 = await web3.eth.getBalancePromise(carol);
 
-        assert.equal(balance2.minus(balance1).toString(10), amount.minus(fee).minus(fee).toString(10), 'invalid balance on carol address');
 
-        assert.equal(ownerBalance2.minus(ownerBalance1).toString(10), fee.toString(10), 'invalid balance on owner address');
+        assert.equal(amount.minus(fee).minus(result['exchangedAmount']).toNumber(), 0, 'invalid amount');
+
+        assert.isAbove(balance2.minus(balance1).toString(10), 0, 'carol balance2 should be higher than balance1');
+        //should be below because carol used some gas for transaction
+        assert.isBelow(balance2.minus(balance1).minus(result['exchangedAmount']).toString(10), 0, 'invalid balance on carol address');
 
 
     });
@@ -86,17 +86,18 @@ contract('Remittance', function(accounts) {
 
         await helper.createTransfer(alice, id, 1, amount);
 
-        let balance1 = await instance.getBalance.call(alice);
+        let balance1 = await web3.eth.getBalancePromise(alice);
 
-        //generate block number
+        //generate next block, so we  can cancel - this one should throw
         await helper.cancelTransfer(alice, id, true);
+
         //now we can cancel
         await helper.cancelTransfer(alice, id);
 
-        let balance2 = await instance.getBalance.call(alice);
+        let balance2 = await web3.eth.getBalancePromise(alice);
 
-
-        assert.equal(balance2.minus(balance1).toString(10), amount.minus(fee).toString(10), 'invalid balance on alice address');
+        assert.isAbove(balance2.minus(balance1).toString(10), 0, 'alice balance2 invalid');
+        assert.isBelow(balance2.minus(balance1).minus(amount).plus(fee).toString(10), 0, 'invalid balance on alice address');
 
 
     });

@@ -31,8 +31,8 @@ contract('Remittance', function(accounts) {
         assert.isAbove(fee.toString(10), 0, 'we need commissions fee');
 
 
-        amount = fee.add(fee).add(web3.toWei(10, 'kwei'));
-        assert.isAbove(amount.toString(10), fee.toString(10), 'amount should be enough for fees');
+        amount = fee.add(web3.toWei(10, 'kwei'));
+        assert.isAbove(amount.toString(10), fee.toString(10), 'amount should be enough for fee');
 
 
         helper.setInstance(instance);
@@ -44,7 +44,7 @@ contract('Remittance', function(accounts) {
 
     it("should THROW, when not enough founds for commission fee", async () => {
 
-        await helper.createTransfer(alice, id, 1, 1, true);
+        await helper.createTransfer(alice, id, 1, fee, true);
 
     });
 
@@ -71,7 +71,7 @@ contract('Remittance', function(accounts) {
     it("should NOT be able to exchange without correct pass", async () => {
 
         await helper.createTransfer(alice, id, 10, amount);
-        await helper.doExchange(carol, emailPass, 'dont-have-bobs-pass', bob, 3, true);
+        await helper.doExchange(carol, emailPass, 'invalid-sms-pass', bob, true);
 
 
     });

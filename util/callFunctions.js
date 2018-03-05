@@ -53,10 +53,10 @@ module.exports = {
 
 
     //doExchange(string emailPass, string smsPass, address bob, uint8 conversionRate)
-    doExchange: async function(sender, emailPass, smsPass, bob, conversionRate, expectThrow) {
+    doExchange: async function(sender, emailPass, smsPass, bob, expectThrow) {
 
         try {
-            _tx = await instance.doExchange(emailPass, smsPass, bob, conversionRate, {from: sender});
+            _tx = await instance.doExchange(emailPass, smsPass, bob, {from: sender});
         } catch (_e) {
             return printReturnCatch(_e, expectThrow);
         }
