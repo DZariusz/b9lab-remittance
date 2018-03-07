@@ -1,8 +1,6 @@
 pragma solidity ^0.4.11;
 
-import "./ExchangeLib.sol";
 import "./SafeMath.sol";
-
 import "./Killable.sol";
 
 
@@ -83,7 +81,7 @@ contract Remittance is Killable {
     returns (bool success)
     {
 
-        bytes32 id = keccak256(emailPass, smsPass, bob);
+        bytes32 id = hash(emailPass, smsPass, bob);
         require( !transfers[ id ].done );
         require( transfers[ id ].sender != 0 );
 
